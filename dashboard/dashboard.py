@@ -3,8 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load data
-day_data = pd.read_csv('day.csv')
-hour_data = pd.read_csv('hourNew.csv')
+day_data = pd.read_csv('dashboard/day.csv')
+hour_data = pd.read_csv('dashboard/hourNew.csv')
 
 # Title and introduction
 st.title("Bike Sharing Data Dashboard")
