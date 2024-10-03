@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
 # Load the dataset
-day = pd.read_csv('../data/dayNew.csv')  
+day = pd.read_csv('dayNew.csv')  
 
 # Title and description
 st.title("Dashboard Analisis Penyewaan Sepeda")
@@ -65,7 +65,7 @@ elif option == "Distribusi Penyewaan":
 elif option == "Pola Jam Per Jam":
     st.header("Pola Penyewaan Sepeda per Jam")
 
-    hour = pd.read_csv('../data/hourNew.csv') 
+    hour = pd.read_csv('hourNew.csv') 
 
     fig, ax = plt.subplots()
     sns.lineplot(x='waktu', y='cnt', data=hour, hue='weathersitDesc', ax=ax)
