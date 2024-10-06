@@ -6,81 +6,155 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
 # Load the dataset
-day = pd.read_csv('dashboard/dayNew.csv')  
+day = pd.read_csv('dashboard/dayNew.csv')
+hour = pd.read_csv('dashboard/hourNew.csv')
+summaryWork = day.groupby('workingdayDesc').sum().reset_index()
+summarySeason = day.groupby('seasonDesc').sum().reset_index()
+summaryWeather = day.groupby('weathersitDesc').sum().reset_index()
+summaryHour = hour.groupby('waktu').agg({
+    'cnt': 'sum',
+    'registered': 'sum',
+    'casual': 'sum'
+}).reset_index()
+
 
 # Title and description
 st.title("Dashboard Analisis Penyewaan Sepeda")
 st.markdown("""
-Dashboard ini menampilkan berbagai insight dari analisis penyewaan sepeda, termasuk faktor utama yang mempengaruhi penyewaan, dampak cuaca, pola penyewaan harian, dan hasil clustering.
+Dashboard ini menampilkan berbagai **insight** penting dari data penyewaan sepeda. Setiap visualisasi menjelaskan faktor-faktor yang mempengaruhi penyewaan sepeda, termasuk:
+- **Pengaruh cuaca dan waktu** terhadap jumlah penyewaan.
+- **Distribusi penyewaan** berdasarkan kelembapan, suhu, musim, dan kondisi cuaca.
+- **Jumlah penyewaan** pada hari kerja dan hari libur.
+- **Pola penyewaan sepeda** berdasarkan waktu dalam sehari.
+- **Analisis cluster** yang memvisualisasikan pola penyewaan dalam kelompok yang berbeda.
+Pilih salah satu **insight** di panel samping untuk melihat visualisasinya secara detail.
 """)
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
-option = st.sidebar.selectbox("Pilih Insight", ("Pengaruh Cuaca & Waktu", "Distribusi Penyewaan", "Pola Jam Per Jam", "Cluster Analysis"))
+option = st.sidebar.selectbox(
+    "Pilih Insight", 
+    (
+        "Pengaruh Cuaca & Waktu", 
+        "Distribusi Penyewaan Berdasarkan Kelembapan", 
+        "Distribusi Penyewaan Berdasarkan Suhu", 
+        "Jumlah Penyewaan Hari Kerja vs Libur", 
+        "Distribusi Berdasarkan Musim", 
+        "Distribusi Berdasarkan Kondisi Cuaca", 
+        "Cluster Analysis",
+        "Pola Penyewaan Sepeda Berdasarkan Waktu"
+    )
+)
 
 # Display insight based on selection
 if option == "Pengaruh Cuaca & Waktu":
-    st.header("Pengaruh Suhu dan Kelembapan terhadap Penyewaan Sepeda")
-
-    fig, ax = plt.subplots()
-    sns.barplot(x='temp_category', y='cnt', data=day, estimator=sum, ax=ax)
+    st.header("Pengaruh Suhu terhadap Jumlah Penyewaan Sepeda")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.scatterplot(data=day, x='temp', y='cnt', label='Jumlah Penyewaan', ax=ax)
+    sns.lineplot(data=day, x='temp', y='cnt', estimator='mean', color='red', label='Rata-rata Penyewaan', ax=ax)
     ax.set_title('Pengaruh Suhu terhadap Jumlah Penyewaan Sepeda')
-    ax.set_xlabel('Kategori Suhu (temp_category)')
-    ax.set_ylabel('Total Jumlah Penyewaan (cnt)')
-    st.pyplot(fig)
-
-    fig, ax = plt.subplots()
-    sns.barplot(x='hum_category', y='cnt', data=day, estimator=sum, ax=ax)
-    ax.set_title('Pengaruh Kelembapan terhadap Jumlah Penyewaan Sepeda')
-    ax.set_xlabel('Kelembapan (Kategori Hum)')
-    ax.set_ylabel('Total Jumlah Penyewaan (cnt)')
+    ax.set_xlabel('Suhu (Normalisasi)')
+    ax.set_ylabel('Jumlah Penyewaan')
+    ax.legend()
     st.pyplot(fig)
 
     st.markdown("""
-    **Kesimpulan**: Suhu memiliki pengaruh yang signifikan terhadap penyewaan sepeda, di mana suhu hangat meningkatkan penyewaan, sedangkan kelembapan tinggi sedikit mengurangi minat penyewaan.
+    **Penjelasan**: Visualisasi ini menunjukkan bagaimana suhu mempengaruhi jumlah penyewaan sepeda. Semakin hangat suhu, semakin tinggi jumlah penyewaan sepeda, namun ada batasan dimana suhu terlalu panas dapat menurunkan penyewaan.
     """)
 
-elif option == "Distribusi Penyewaan":
-    st.header("Distribusi Penyewaan Sepeda menurut Musim dan Kondisi Cuaca")
-
-    fig, ax = plt.subplots()
-    sns.barplot(x='seasonDesc', y='cnt', data=day, estimator=sum, ax=ax)
-    ax.set_title('Distribusi Penyewaan Sepeda menurut Musim')
-    ax.set_xlabel('Musim')
-    ax.set_ylabel('Total Jumlah Penyewaan')
+elif option == "Distribusi Penyewaan Berdasarkan Kelembapan":
+    st.header("Distribusi Penyewaan Sepeda Berdasarkan Kelembapan")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=day, x='hum_category', y='cnt', palette='viridis', ax=ax)
+    ax.set_title('Distribusi Penyewaan Sepeda Berdasarkan Kelembapan')
+    ax.set_xlabel('Kelembapan')
+    ax.set_ylabel('Jumlah Penyewaan')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
     st.pyplot(fig)
 
-    # Plot rentals by weather situation
-    fig, ax = plt.subplots()
-    sns.barplot(x='weathersit', y='cnt', data=day, estimator=sum, ax=ax)
-    ax.set_title('Jumlah Penyewaan Sepeda menurut Kondisi Cuaca')
+    st.markdown("""
+    **Penjelasan**: Distribusi ini menunjukkan bahwa tingkat kelembapan yang lebih tinggi sedikit menurunkan jumlah penyewaan sepeda, sedangkan pada kelembapan rendah hingga sedang penyewaan lebih tinggi.
+    """)
+
+elif option == "Distribusi Penyewaan Berdasarkan Suhu":
+    st.header("Distribusi Penyewaan Sepeda Berdasarkan Suhu")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=day, x='temp_category', y='cnt', palette='viridis', ax=ax)
+    ax.set_title('Distribusi Penyewaan Sepeda Berdasarkan Suhu')
+    ax.set_xlabel('Suhu')
+    ax.set_ylabel('Jumlah Penyewaan')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+    st.pyplot(fig)
+
+    st.markdown("""
+    **Penjelasan**: Penyewaan sepeda lebih tinggi saat suhu sedang dan menurun pada suhu ekstrem (sangat dingin atau sangat panas).
+    """)
+
+elif option == "Jumlah Penyewaan Hari Kerja vs Libur":
+    st.header("Jumlah Penyewaan pada Hari Kerja dan Hari Libur")
+    
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.pie(summaryWork['cnt'], labels=summaryWork['workingdayDesc'], autopct='%1.1f%%', startangle=90, explode=[0.1, 0.0])
+    ax.set_title('Jumlah Penyewaan pada Hari Kerja dan Hari Libur')
+    ax.axis('equal')
+    st.pyplot(fig)
+
+    st.markdown("""
+    **Penjelasan**: Grafik pie ini menunjukkan perbandingan penyewaan sepeda pada hari kerja dan hari libur. Terlihat bahwa jumlah penyewaan sepeda cenderung lebih tinggi pada hari libur dibandingkan hari kerja.
+    """)
+
+elif option == "Distribusi Berdasarkan Musim":
+    st.header("Distribusi Penyewaan Sepeda Berdasarkan Musim")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=summarySeason, x='seasonDesc', y='cnt', palette='viridis', ax=ax)
+    ax.set_title('Distribusi Penyewaan Sepeda Berdasarkan Musim')
+    ax.set_xlabel('Musim')
+    ax.set_ylabel('Jumlah Penyewaan')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+    st.pyplot(fig)
+
+    st.header("Jumlah Penyewaan pada berbagai Musim")
+    
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.pie(summarySeason['cnt'], labels=summarySeason['seasonDesc'], autopct='%1.1f%%', startangle=90, explode=[0.0, 0.0, 0.0, 0.1])
+    ax.set_title('Jumlah Penyewaan pada berbagai Musim')
+    ax.axis('equal')
+    st.pyplot(fig)
+
+    st.markdown("""
+    **Penjelasan**: Visualisasi ini menunjukkan penyewaan sepeda lebih tinggi pada musim tertentu, terutama di musim yang lebih hangat.
+    """)
+
+elif option == "Distribusi Berdasarkan Kondisi Cuaca":
+    st.header("Distribusi Penyewaan Sepeda Berdasarkan Kondisi Cuaca")
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=summaryWeather, x='weathersitDesc', y='cnt', palette='viridis', ax=ax)
+    ax.set_title('Distribusi Penyewaan Sepeda Berdasarkan Kondisi Cuaca')
     ax.set_xlabel('Kondisi Cuaca')
     ax.set_ylabel('Jumlah Penyewaan')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+    st.pyplot(fig)
+
+    st.header("Jumlah Penyewaan pada berbagai Kondisi Cuaca")
+    
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.pie(summaryWeather['cnt'], labels=summaryWeather['weathersitDesc'], autopct='%1.1f%%', startangle=90, explode=[0.0, 0.1, 0.0])
+    ax.set_title('Jumlah Penyewaan pada berbagai Kondisi Cuaca')
+    ax.axis('equal')
     st.pyplot(fig)
 
     st.markdown("""
-    **Kesimpulan**: Penyewaan sepeda paling tinggi terjadi pada musim gugur dan cuaca cerah. Cuaca buruk seperti hujan atau salju secara signifikan menurunkan jumlah penyewaan.
-    """)
-
-elif option == "Pola Jam Per Jam":
-    st.header("Pola Penyewaan Sepeda per Jam")
-
-    hour = pd.read_csv('dashboard/hourNew.csv') 
-
-    fig, ax = plt.subplots()
-    sns.lineplot(x='waktu', y='cnt', data=hour, hue='weathersitDesc', ax=ax)
-    ax.set_title('Pola Penyewaan Sepeda per Jam dengan Kondisi Cuaca')
-    ax.set_xlabel('Jam')
-    ax.set_ylabel('Jumlah Penyewaan (cnt)')
-    st.pyplot(fig)
-
-    st.markdown("""
-    **Kesimpulan**: Penyewaan tertinggi terjadi pada sore hari, diikuti oleh pagi hari. Cuaca cerah memberikan kontribusi besar pada peningkatan penyewaan pada jam sibuk.
+    **Penjelasan**: Grafik ini menunjukkan penyewaan sepeda pada berbagai kondisi cuaca, di mana cuaca cerah mendorong lebih banyak penyewaan dibandingkan cuaca buruk seperti hujan atau kabut.
     """)
 
 elif option == "Cluster Analysis":
     st.header("Analisis Cluster Penyewaan Sepeda")
-
+    
     # Applying KMeans clustering
     features = day[['temp', 'hum', 'windspeed', 'weathersit', 'season', 'workingday', 'cnt']]
     kmeans = KMeans(n_clusters=2, random_state=42)
@@ -108,7 +182,30 @@ elif option == "Cluster Analysis":
     st.pyplot(fig)
 
     st.markdown("""
-    **Kesimpulan**: Kluster 0 menunjukkan penurunan penyewaan pada suhu dingin dan kelembapan tinggi, sedangkan Kluster 1 menunjukkan kenaikan penyewaan pada suhu hangat dan kelembapan rendah.
+    **Penjelasan**: Analisis cluster ini mengelompokkan data penyewaan sepeda berdasarkan faktor seperti suhu, kelembapan, dan kondisi cuaca. Cluster 0 menunjukkan penurunan penyewaan pada suhu dingin, sedangkan Cluster 1 menunjukkan peningkatan penyewaan pada suhu hangat.
+    """)
+
+elif option == "Pola Penyewaan Sepeda Berdasarkan Waktu":  
+    st.header("Pola Penyewaan Sepeda berdasarkan Waktu")
+    
+    # Barplot untuk penyewaan berdasarkan waktu
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=summaryHour, x='waktu', y='cnt', palette='viridis', ax=ax)
+    ax.set_title('Pola Penyewaan Sepeda berdasarkan Jam')
+    ax.set_xlabel('Waktu dalam Sehari')
+    ax.set_ylabel('Jumlah Penyewaan')
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
+
+    # Pie chart untuk persentase penyewaan berdasarkan waktu
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.pie(summaryHour['cnt'], labels=summaryHour['waktu'], autopct='%1.1f%%', startangle=90, explode=[0.0, 0.0, 0.0, 0.0, 0.1])
+    ax.set_title('Jumlah Penyewaan pada berbagai Waktu')
+    ax.axis('equal')
+    st.pyplot(fig)
+
+    st.markdown("""
+    **Penjelasan**: Penyewaan sepeda lebih tinggi pada pagi hari dan sore hari, saat aktivitas masyarakat sedang tinggi.
     """)
 
 # Footer
